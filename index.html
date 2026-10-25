@@ -101,8 +101,8 @@ button:disabled{opacity:.65;cursor:wait;transform:none}
   <p class="intro">မင်းအတွက် စာတိုလေးတစ်ခု ရှိတယ်နော်။ 💌</p>
   <div class="scene"><span class="mini a">♡</span><span class="mini b">✧</span><div class="flower" aria-hidden="true">🌙</div></div>
   <div class="buttons">
-    <button class="primary" id="surprise"><escape><span class="button-hint">👆</span></escape>စာလေး ဖွင့်ကြည့်မယ် ✨</button>
-    <button class="secondary" id="moodButton"><escape><span class="button-hint">👆</span></escape>ဒီည ဘယ်လိုနေလဲ? 🌙</button>
+    <button class="primary" id="surprise"><span class="button-hint">👆</span>စာလေး ဖွင့်ကြည့်မယ် ✨</button>
+    <button class="secondary" id="moodButton"><span class="button-hint">👆</span>ဒီည ဘယ်လိုနေလဲ? 🌙</button>
   </div>
   <section class="panel" id="note" aria-live="polite">
     <h2>အိပ်မက်လှလှ မက်ပါစေ ♡</h2>
@@ -112,9 +112,9 @@ button:disabled{opacity:.65;cursor:wait;transform:none}
   <section class="panel" id="moodPanel" aria-live="polite">
     <h2>ဒီည မင်းဘယ်လိုလဲ? 🌙</h2>
     <div class="moods">
-      <button class="mood" data-mood="good">😌 အေးချမ်းတယ်</button>
-      <button class="mood" data-mood="sleepy">😴 အိပ်ချင်တယ်</button>
-      <button class="mood" data-mood="sad">🥺 ပင်ပန်းတယ်</button>
+      <button class="mood" data-mood="good" data-label="အေးချမ်းတယ်">😌 အေးချမ်းတယ်</button>
+      <button class="mood" data-mood="sleepy" data-label="အိပ်ချင်တယ်">😴 အိပ်ချင်တယ်</button>
+      <button class="mood" data-mood="sad" data-label="ပင်ပန်းတယ်">🥺 ပင်ပန်းတယ်</button>
     </div>
     <p class="reply" id="reply">တစ်ခုကို ရွေးကြည့်နော်။</p>
   </section>
@@ -131,13 +131,13 @@ button:disabled{opacity:.65;cursor:wait;transform:none}
     <p class="loading-subtitle" id="loadingHint">မင်းရဲ့ညလေး အေးချမ်းပါစေ 🌙</p>
   </div>
 </div>
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
+<script type="module">
+  // Firebase SDK များကို Import လုပ်ခြင်း
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+
+  // သင့်ရဲ့ Firebase Config အချက်အလက်များ
   const firebaseConfig = {
     apiKey: "AIzaSyBPR33S467KETiFCL7D5iWacnunAoB_1OE",
     authDomain: "goodnight-43348.firebaseapp.com",
@@ -147,104 +147,133 @@ button:disabled{opacity:.65;cursor:wait;transform:none}
     appId: "1:400289720460:web:d4bf51444bb5e04491b3a9"
   };
 
-  // Initialize Firebase
+  // Firebase ကို စတင်ချိတ်ဆက်ခြင်း
   const app = initializeApp(firebaseConfig);
-</script>
-<script>
-const note=document.getElementById('note');
-const surprise=document.getElementById('surprise');
-const toast=document.getElementById('toast');
-const loadingScreen=document.getElementById('loadingScreen');
-let toastTimer, loadingTimer;
-// Show a welcome loading screen automatically when the website first opens.
-document.body.style.overflow='hidden';
-loadingTimer=setTimeout(()=>{
-  loadingScreen.classList.remove('active');
-  loadingScreen.setAttribute('aria-hidden','true');
-  document.body.style.overflow='';
-},2200);
-function showToast(text){
-  toast.textContent=text; toast.classList.add('show');
-  clearTimeout(toastTimer); toastTimer=setTimeout(()=>toast.classList.remove('show'),2200);
-}
-function flowerBurst(){
-  const layer=document.getElementById('petalLayer');
-  const symbols=['🌙','⭐','✨','♡','🌌','✦','💜'];
-  for(let i=0;i<20;i++){
-    const p=document.createElement('span');p.className='petal';
-    p.textContent=symbols[i%symbols.length];
-    p.style.left=(window.innerWidth/2+(Math.random()*70-35))+'px';
-    p.style.setProperty('--x',(Math.random()*300-150)+'px');
-    p.style.setProperty('--y',(-100-Math.random()*260)+'px');
-    p.style.setProperty('--r',(Math.random()*180-90)+'deg');
-    p.style.animationDelay=(Math.random()*.18)+'s';
-    layer.appendChild(p);setTimeout(()=>p.remove(),1700);
-  }
-}
-function runLoading(action, title, subtitle, hint){
-  if(loadingScreen.classList.contains('active')) return;
-  document.getElementById('loadingTitle').textContent=title;
-  document.getElementById('loadingSubtitle').innerHTML=subtitle+'<span class="loading-dots"><span> ·</span><span> ·</span><span> ·</span></span>';
-  document.getElementById('loadingHint').textContent=hint;
-  const bar=document.getElementById('progressBar');
-  bar.style.animation='none';void bar.offsetWidth;bar.style.animation='';
-  loadingScreen.classList.add('active');
-  loadingScreen.setAttribute('aria-hidden','false');
-  document.body.style.overflow='hidden';
-  clearTimeout(loadingTimer);
-  loadingTimer=setTimeout(()=>{
+  const db = getFirestore(app);
+
+  const note = document.getElementById('note');
+  const surprise = document.getElementById('surprise');
+  const toast = document.getElementById('toast');
+  const loadingScreen = document.getElementById('loadingScreen');
+  let toastTimer, loadingTimer;
+
+  document.body.style.overflow = 'hidden';
+  loadingTimer = setTimeout(() => {
     loadingScreen.classList.remove('active');
-    loadingScreen.setAttribute('aria-hidden','true');
-    document.body.style.overflow='';
-    action();
-  },2200);
-}
-surprise.addEventListener('click',()=>{
-  if(note.classList.contains('show')){
-    note.classList.remove('show');
-    surprise.textContent='စာလေး ဖွင့်ကြည့်မယ် ✨';
-    showToast('နောက်တစ်ခါလည်း ပြန်ဖွင့်ကြည့်လို့ရတယ်နော် ☁️');
-    return;
+    loadingScreen.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }, 2200);
+
+  function showToast(text) {
+    toast.textContent = text;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2200);
   }
-  surprise.disabled=true;
-  runLoading(()=>{
-    note.classList.add('show');
-    surprise.textContent='စာလေးကို ပိတ်မယ် ♡';
+
+  function flowerBurst() {
+    const layer = document.getElementById('petalLayer');
+    const symbols = ['🌙', '⭐', '✨', '♡', '🌌', '✦', '💜'];
+    for (let i = 0; i < 20; i++) {
+      const p = document.createElement('span');
+      p.className = 'petal';
+      p.textContent = symbols[i % symbols.length];
+      p.style.left = (window.innerWidth / 2 + (Math.random() * 70 - 35)) + 'px';
+      p.style.setProperty('--x', (Math.random() * 300 - 150) + 'px');
+      p.style.setProperty('--y', (-100 - Math.random() * 260) + 'px');
+      p.style.setProperty('--r', (Math.random() * 180 - 90) + 'deg');
+      p.style.animationDelay = (Math.random() * .18) + 's';
+      layer.appendChild(p);
+      setTimeout(() => p.remove(), 1700);
+    }
+  }
+
+  function runLoading(action, title, subtitle, hint) {
+    if (loadingScreen.classList.contains('active')) return;
+    document.getElementById('loadingTitle').textContent = title;
+    document.getElementById('loadingSubtitle').innerHTML = subtitle + '<span class="loading-dots"><span> ·</span><span> ·</span><span> ·</span></span>';
+    document.getElementById('loadingHint').textContent = hint;
+    const bar = document.getElementById('progressBar');
+    bar.style.animation = 'none';
+    void bar.offsetWidth;
+    bar.style.animation = '';
+    loadingScreen.classList.add('active');
+    loadingScreen.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    clearTimeout(loadingTimer);
+    loadingTimer = setTimeout(() => {
+      loadingScreen.classList.remove('active');
+      loadingScreen.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      action();
+    }, 2200);
+  }
+
+  surprise.addEventListener('click', () => {
+    if (note.classList.contains('show')) {
+      note.classList.remove('show');
+      surprise.textContent = 'စာလေး ဖွင့်ကြည့်မယ် ✨';
+      showToast('နောက်တစ်ခါလည်း ပြန်ဖွင့်ကြည့်လို့ရတယ်နော် ☁️');
+      return;
+    }
+    surprise.disabled = true;
+    runLoading(() => {
+      note.classList.add('show');
+      surprise.textContent = 'စာလေးကို ပိတ်မယ် ♡';
+      flowerBurst();
+      showToast('မင်းအတွက် ပန်းလေးတွေ ပွင့်လာပြီ 🌷');
+      surprise.disabled = false;
+      note.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 'မင်းအတွက် ပြင်ဆင်နေပါတယ်', 'ကြယ်လေးတွေ လင်းလာဖို့ ခဏ စောင့်နော်', 'မင်းရဲ့ညလေး အေးချမ်းပါစေ 🌙');
+  });
+
+  document.getElementById('moodButton').addEventListener('click', () => {
+    const panel = document.getElementById('moodPanel');
+    if (panel.classList.contains('show')) {
+      panel.classList.remove('show');
+      document.getElementById('moodButton').textContent = 'ဒီည ဘယ်လိုနေလဲ? 🌙';
+      return;
+    }
+    const btn = document.getElementById('moodButton');
+    btn.disabled = true;
+    runLoading(() => {
+      panel.classList.add('show');
+      btn.textContent = 'အခြေအနေကို ပိတ်မယ် ♡';
+      btn.disabled = false;
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      showToast('မင်းရဲ့ mood လေး ရွေးကြည့်နော် 💙');
+    }, 'မင်းအတွက် ပြင်ဆင်နေပါတယ်', 'ရွေးလို့ရအောင် လုပ်နေပါတယ်', 'အေးအေးဆေးဆေး ရွေးနော် 🌙');
+  });
+
+  const replies = {
+    good: 'ဝမ်းသာပါတယ်။ အိပ်မက်လှလှလေး မက်ပါစေနော်။ 💙',
+    sleepy: 'ဒါဆို ဖုန်းလေးကို ဘေးချပြီး အိပ်လိုက်တော့နော်။ 🌙',
+    sad: 'ဒါဆို အိပ်ရာဝင်ပြီး အနားယူတော့နော်။ 🌙 '
+  };
+
+  // Mood ကို နှိပ်လိုက်ရင် Firebase Firestore ထဲသို့ ဒေတာပို့မည့် အပိုင်း
+  document.querySelectorAll('.mood').forEach(btn => btn.addEventListener('click', async () => {
+    document.querySelectorAll('.mood').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+
+    const moodType = btn.dataset.mood;
+    const moodLabel = btn.dataset.label;
+
+    document.getElementById('reply').textContent = replies[moodType];
     flowerBurst();
-    showToast('မင်းအတွက် ပန်းလေးတွေ ပွင့်လာပြီ 🌷');
-    surprise.disabled=false;
-    note.scrollIntoView({behavior:'smooth',block:'nearest'});
-  },'မင်းအတွက် ပြင်ဆင်နေပါတယ်','ကြယ်လေးတွေ လင်းလာဖို့ ခဏ စောင့်နော်','မင်းရဲ့ညလေး အေးချမ်းပါစေ 🌙');
-});
-document.getElementById('moodButton').addEventListener('click',()=>{
-  const panel=document.getElementById('moodPanel');
-  if(panel.classList.contains('show')){
-    panel.classList.remove('show');
-    document.getElementById('moodButton').textContent='ဒီည ဘယ်လိုနေလဲ? 🌙';
-    return;
-  }
-  const btn=document.getElementById('moodButton');
-  btn.disabled=true;
-  runLoading(()=>{
-    panel.classList.add('show');
-    btn.textContent='အခြေအနေကို ပိတ်မယ် ♡';
-    btn.disabled=false;
-    panel.scrollIntoView({behavior:'smooth',block:'nearest'});
-    showToast('မင်းရဲ့ mood လေး ရွေးကြည့်နော် 💙');
-  },'မင်းအတွက် ပြင်ဆင်နေပါတယ်','ရွေးလို့ရအောင် လုပ်နေပါတယ်','အေးအေးဆေးဆေး ရွေးနော် 🌙');
-});
-const replies={
- good:'ဝမ်းသာပါတယ်။ အိပ်မက်လှလှလေး မက်ပါစေနော်။ 💙',
- sleepy:'ဒါဆို ဖုန်းလေးကို ဘေးချပြီး အိပ်လိုက်တော့နော်။ 🌙',
- sad:'ဒါဆို အိပ်ရာဝင်ပြီး အနားယူတော့နော်။ 🌙 '
-};
-document.querySelectorAll('.mood').forEach(btn=>btn.addEventListener('click',()=>{
-  document.querySelectorAll('.mood').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  document.getElementById('reply').textContent=replies[btn.dataset.mood];
-  flowerBurst();
-  showToast('ဒီညရဲ့ mood လေး သိပြီနော် 💌');
-}));
+    showToast('ဒီညရဲ့ mood လေး သိပြီနော် 💌');
+
+    try {
+      const docRef = await addDoc(collection(db, "user_moods"), {
+        moodKey: moodType,
+        moodText: moodLabel,
+        timestamp: serverTimestamp()
+      });
+      console.log("Mood successfully saved with ID: ", docRef.id);
+    } catch (e) {
+      console.error("Error saving mood to Firebase: ", e);
+    }
+  }));
 </script>
 </body>
 </html>
