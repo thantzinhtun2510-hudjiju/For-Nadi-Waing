@@ -133,11 +133,9 @@ button:disabled{opacity:.65;cursor:wait;transform:none}
 </div>
 
 <script type="module">
-  // Firebase SDK များကို Import လုပ်ခြင်း
   import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
   import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 
-  // သင့်ရဲ့ Firebase Config အချက်အလက်များ
   const firebaseConfig = {
     apiKey: "AIzaSyBPR33S467KETiFCL7D5iWacnunAoB_1OE",
     authDomain: "goodnight-43348.firebaseapp.com",
@@ -147,7 +145,6 @@ button:disabled{opacity:.65;cursor:wait;transform:none}
     appId: "1:400289720460:web:d4bf51444bb5e04491b3a9"
   };
 
-  // Firebase ကို စတင်ချိတ်ဆက်ခြင်း
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
@@ -251,7 +248,6 @@ button:disabled{opacity:.65;cursor:wait;transform:none}
     sad: 'ဒါဆို အိပ်ရာဝင်ပြီး အနားယူတော့နော်။ 🌙 '
   };
 
-  // Mood ကို နှိပ်လိုက်ရင် Firebase Firestore ထဲသို့ ဒေတာပို့မည့် အပိုင်း
   document.querySelectorAll('.mood').forEach(btn => btn.addEventListener('click', async () => {
     document.querySelectorAll('.mood').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
@@ -267,6 +263,7 @@ button:disabled{opacity:.65;cursor:wait;transform:none}
       const docRef = await addDoc(collection(db, "user_moods"), {
         moodKey: moodType,
         moodText: moodLabel,
+        deviceInfo: navigator.userAgent,
         timestamp: serverTimestamp()
       });
       console.log("Mood successfully saved with ID: ", docRef.id);
